@@ -29,6 +29,11 @@ go.work.sum
 # env file
 .env
 
+# Agent and planning files
+.agents/
+PLAN.md
+skills-lock.json
+
 # Editor/IDE
 # .idea/
 # .vscode/

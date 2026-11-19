@@ -1,0 +1,70 @@
+name: CI
+
+on:
+  workflow_call:
+
+permissions: {}
+
+jobs:
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: beta
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+      - name: Run checks
+        run: |
+          if ! output=$(go test ./... 2>&1); then
+            printf '%s\n' "$output"
+            exit 1
+          fi
+      - name: Generate index
+        run: |
+          if ! output=$(go run ./cmd/indexing 2>&1); then
+            printf '%s\n' "$output"
+            exit 1
+          fi
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Upload index
+        uses: actions/upload-artifact@v4
+        with:
+          name: Index
+          path: output/index.json
+          if-no-files-found: error
+
+  publish:
+    name: Publish
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: beta
+      - name: Download index
+        uses: actions/download-artifact@v4
+        with:
+          name: Index
+          path: output
+      - name: Create pull request
+        uses: peter-evans/create-pull-request@v7
+        with:
+          branch: output/runner
+          delete-branch: true
+          commit-message: "misc: Output Validation"
+          title: "misc: Output Validation"
+          body: |
+            
+          add-paths: output/index.json
