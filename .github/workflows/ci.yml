@@ -1,0 +1,13 @@
+name: CI
+
+on:
+  schedule:
+    - cron: "0 9 * * 1"
+
+jobs:
+  call:
+    permissions:
+      contents: write
+      pull-requests: write
+    uses: AutumnLib/index-aggregation/.github/workflows/call.yml@beta
+    secrets: inherit
